@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi", "relationJoins"]
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  userName  String    @unique @db.String(255)
+  password  String    @db.String(500)
+  bio       String?   @db.String(500)
+  phone     String?
+  email     String    @unique(map: "user_unique_email") @db.String(255)
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @db.Timestamptz(6)
+
+  contacts        Contact[] @relation(name: "contact_contact_fkey")
+  contactUser     Contact[] @relation(name: "contact_user_fkey")
+  messageUserFrom Message[] @relation(name: "message_from_user_fkey")
+  messageUserTo   Message[] @relation(name: "message_to_user_fkey")
+
+  @@map("users")
+}
+
+model Contact {
+  id        String    @id @default(uuid())
+  userId    String
+  contactId String
+  accepted  Boolean   @default(false)
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @db.Timestamptz(6)
+
+  user    User @relation(name: "contact_user_fkey", fields: [userId], references: [id])
+  contact User @relation(name: "contact_contact_fkey", fields: [contactId], references: [id])
+
+  @@map("user-contacts")
+  @@unique([userId, contactId])
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  from      String
+  to        String
+  body      String    @db.String(500)
+  isRead    Boolean?  @default(false)
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @db.Timestamptz(6)
+  fromUser  User      @relation(name: "message_from_user_fkey", fields: [from], references: [id])
+  toUser    User      @relation(name: "message_to_user_fkey", fields: [to], references: [id])
+
+  @@map("messages")
+}
+
+model Upload {
+  id          String      @id @default(uuid())
+  url         String      @db.String(1000)
+  serviceId   String
+  serviceName ServiceName
+  createdAt   DateTime?   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime?   @default(now()) @db.Timestamptz(6)
+
+  @@map("uploads")
+}
+
+enum ServiceName {
+  USER
+  MESSAGE
+}
