@@ -29,3 +29,5 @@ yarn.lock
 
 .env
 /build
+
+src/prisma/migrations/migration_lock.toml
