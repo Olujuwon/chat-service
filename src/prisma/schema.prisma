@@ -51,7 +51,7 @@ model Message {
   id        String    @id @default(uuid())
   from      String
   to        String
-  body      String    @db.String(500)
+  body      String    @db.String(5000)
   isRead    Boolean?  @default(false)
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @db.Timestamptz(6)
