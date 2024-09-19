@@ -3,6 +3,8 @@ import Joi from 'joi';
 import bcrypt from 'bcrypt';
 import { recordIndexer } from './algolia';
 import * as dotenv from 'dotenv';
+import { IUser } from '../types';
+import { RedisClientType } from 'redis';
 
 dotenv.config();
 
@@ -143,27 +145,42 @@ const usersPlugin: Hapi.Plugin<null> = {
 
 export default usersPlugin;
 
+const generateNewJwtToken = async (user: IUser, jwt: any): Promise<string> => {
+    return await jwt.sign({ data: user.userName }, process.env.JWT_SECRET, { expiresIn: '24h' });
+};
+
+const setTokenToRedis = async (user: IUser, redis: RedisClientType, token: string) => {
+    await redis.json.set(`token:${user.id as string}`, '$', { userId: user.id as string, token: token });
+    await redis.expire(`token:${user.id}`, Number(process.env.REDIS_TTL));
+};
+
 const signupHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
     const { prisma, jwt, redis } = request.server.app;
-    const { userName, password, phone, email } = request.payload as any;
+    const { userName, password, phone, email, bio } = request.payload as any;
     try {
         const createdUser = await prisma.user.create({
             data: {
                 userName: userName,
                 phone: phone,
                 email: email,
+                bio: bio,
                 password: bcrypt.hashSync(password, 10),
             },
             omit: { password: true },
         });
         //Add chattyAi as new user's contact
         await prisma.contact.create({
-            data: { userId: createdUser.id, contactId: '000670f5-6c1f-4f7e-aa9d-935c3f4e8b36', accepted: true },
+            data: { userId: createdUser.id, contactId: '621dc179-6489-4087-a98d-993966eba7dc', accepted: true },
         });
-        const userToken = await jwt.sign({ data: createdUser.userName }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const userToken = await generateNewJwtToken(createdUser as IUser, jwt);
         await recordIndexer({ ...createdUser }, 'IDX_USER');
-        await redis.json.set(`token:${createdUser.id}`, '$', { userId: createdUser.id, token: userToken });
-        return h.response({ data: { ...createdUser, token: userToken }, version: '1.0.0' }).code(201);
+        await setTokenToRedis(createdUser as IUser, redis, userToken);
+        return h
+            .response({
+                data: { ...createdUser, token: userToken },
+                version: '1.0.0',
+            })
+            .code(201);
     } catch (error) {
         return h.response({ error: 'A server error occurred', version: '1.0.0' }).code(500);
     }
@@ -172,7 +189,6 @@ const signupHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => 
 const signinHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
     const { prisma, jwt, redis } = request.server.app;
     const { userName, password } = request.payload as any;
-    console.log('AUTH1');
     try {
         const user = await prisma.user.findUnique({ where: { userName: userName } });
         if (!user) throw new Error('User does not exist');
@@ -180,16 +196,16 @@ const signinHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => 
         if (!isPasswordValid) throw new Error('Username or password incorrect');
         let userAuthToken = await redis.json.get(`token:${user.id}`);
         if (!userAuthToken) {
-            userAuthToken = await jwt.sign({ data: user.userName }, process.env.JWT_SECRET, { expiresIn: '24h' });
-            await redis.json.set(`token:${user.id}`, '$', { userId: user.id, token: userAuthToken });
+            userAuthToken = await generateNewJwtToken(user as IUser, jwt);
+            await setTokenToRedis(user as IUser, redis, userAuthToken);
         }
         return jwt.verify(userAuthToken, process.env.JWT_SECRET, async (error: any) => {
             const userToSend = { ...user };
             // @ts-ignore
             delete userToSend.password;
             if (error) {
-                userAuthToken = await jwt.sign({ data: user.userName }, process.env.JWT_SECRET, { expiresIn: '24h' });
-                await redis.json.set(`token:${user.id}`, '$', { userId: user.id, token: userAuthToken });
+                userAuthToken = await generateNewJwtToken(user as IUser, jwt);
+                await setTokenToRedis(user as IUser, redis, userAuthToken);
                 return h.response({ data: { ...userToSend, token: userAuthToken }, version: '1.0.0' }).code(200);
             } else {
                 return h.response({ data: { ...userToSend, token: userAuthToken }, version: '1.0.0' }).code(200);
