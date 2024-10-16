@@ -1,7 +1,7 @@
 import Hapi from '@hapi/hapi';
 import Joi from 'joi';
 import bcrypt from 'bcrypt';
-import { recordIndexer } from './algolia';
+import { recordIndexer, removeIndex } from './algolia';
 import * as dotenv from 'dotenv';
 import { IUser } from '../types';
 import { RedisClientType } from 'redis';
@@ -129,8 +129,21 @@ const usersPlugin: Hapi.Plugin<null> = {
             server.route([
                 {
                     method: 'DELETE',
-                    path: '/v1/users/{id}',
+                    path: '/v1/users/{userId}',
                     handler: deleteUserHandler,
+                    options: {
+                        validate: {
+                            params: Joi.string(),
+                            failAction: 'log',
+                        },
+                        response: {
+                            schema: Joi.object({
+                                data: Joi.object({}),
+                                version: Joi.string().required(),
+                            }),
+                            failAction: 'log',
+                        },
+                    },
                 },
             ]),
             server.route([
@@ -168,7 +181,7 @@ const signupHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => 
             },
             omit: { password: true },
         });
-        //Add chattyAi as new user's contact
+        //Add chattyAi as new user's contact TODO: Add the ID to .env
         await prisma.contact.create({
             data: { userId: createdUser.id, contactId: '621dc179-6489-4087-a98d-993966eba7dc', accepted: true },
         });
@@ -231,6 +244,17 @@ const logoutUserHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit)
 
 const updateUserHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {};
 
-const deleteUserHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {};
+const deleteUserHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {
+    const { prisma } = request.server.app;
+    const { userId } = request.params as any;
+    try {
+        await prisma.user.delete({ where: { id: userId } });
+        const deleteIndex = await removeIndex(userId, 'IDX_USER');
+        return h.response({ data: {}, version: '1.0.0' }).code(200);
+    } catch (error: any) {
+        console.log(error);
+        return h.response({ error: error.message, version: '1.0.0' }).code(500);
+    }
+};
 
 const getUserHandler = async (request: Hapi.Request, h: Hapi.ResponseToolkit) => {};

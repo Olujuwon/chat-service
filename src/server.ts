@@ -45,9 +45,9 @@ export const init = async function (): Promise<Server> {
             const { redis } = server.app;
             //TODO: Refine search and index so as to be able to do full text search
             const { documents } = await redis.ft.search('idx:chattyTokens', `*`);
-            const isValid = documents.find(
-                ({ value }: { value: { id: string; token: string } }) => value.token === token
-            );
+            const isValid = documents.find(({ value }: { value: { userId: string; token: string } }) => {
+                return value.token === token;
+            });
             const credentials = { token };
             const artifacts = { test: 'info' };
             return { isValid, credentials, artifacts };

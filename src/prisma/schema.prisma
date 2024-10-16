@@ -40,8 +40,8 @@ model Contact {
   createdAt DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @db.Timestamptz(6)
 
-  user    User @relation(name: "contact_user_fkey", fields: [userId], references: [id])
-  contact User @relation(name: "contact_contact_fkey", fields: [contactId], references: [id])
+  user    User @relation(name: "contact_user_fkey", fields: [userId], references: [id], onDelete: Cascade)
+  contact User @relation(name: "contact_contact_fkey", fields: [contactId], references: [id], onDelete: Cascade)
 
   @@map("user-contacts")
   @@unique([userId, contactId])
