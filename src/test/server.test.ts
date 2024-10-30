@@ -1,7 +1,7 @@
 'use strict';
 
 import { describe, expect } from '@jest/globals';
-import { init, start } from '../server';
+import { init, start, stop } from '../server';
 import { Server } from '@hapi/hapi';
 
 describe('GET /health', () => {
@@ -12,7 +12,7 @@ describe('GET /health', () => {
     });
 
     afterAll(async () => {
-        await server.stop();
+        await stop(server);
     });
 
     test('responds with 200', async () => {

@@ -3,8 +3,8 @@ module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
     setupFilesAfterEnv: ['<rootDir>/singleton.ts'],
-    verbose: false,
+    verbose: true,
     testMatch: ['**/?(*.)+(spec|test).ts'],
-    collectCoverage: true,
-    reporters: ['summary'],
+    collectCoverage: false,
+    reporters: ['default', 'summary'],
 };

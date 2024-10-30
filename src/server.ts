@@ -91,8 +91,12 @@ export const start = async function (server: Server): Promise<Server> {
     return server;
 };
 
+export const stop = async (server: Server) => {
+    await server.stop();
+};
+
 process.on('unhandledRejection', (err) => {
-    console.error(err);
+    console.log(err);
     process.exit(1);
 });
 
@@ -101,4 +105,4 @@ init()
         await start(server);
         return server;
     })
-    .catch((err) => console.error('Error While Starting the server', err));
+    .catch((err) => console.log('Error While Starting the server', err));
