@@ -2,9 +2,9 @@ name: Test Hapi Backend Service
 
 on:
   push:
-    branches: [ main ]
+    branches: [ develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ test, master ]
 
 jobs:
   test:
