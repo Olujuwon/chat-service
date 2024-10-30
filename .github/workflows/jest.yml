@@ -22,7 +22,7 @@ jobs:
         run: npm install -g yarn && yarn install
 
       - name: Generate Prisma client
-        run: cd prisma && prisma generate
+        run: ls -la
 
       - name: Run Jest tests
         env:
