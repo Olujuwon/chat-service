@@ -4,7 +4,7 @@ import { describe, expect } from '@jest/globals';
 import { init, start, stop } from '../server';
 import { Server } from '@hapi/hapi';
 
-describe('GET /health', () => {
+describe('Test server health', () => {
     let server: Server;
     beforeAll(async () => {
         server = await init();
@@ -15,7 +15,7 @@ describe('GET /health', () => {
         await stop(server);
     });
 
-    test('responds with 200', async () => {
+    test('GET /health responds with 200', async () => {
         const res = await server.inject({
             method: 'get',
             url: '/v1/health',

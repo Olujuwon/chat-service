@@ -1,0 +1,4 @@
+cloudbuild.yaml
+Dockerfile
+yarn.lock
+node_modules
