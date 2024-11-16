@@ -1,30 +1,29 @@
-import { Prisma } from '@prisma/client';
 import prisma from '../../client';
 
-interface ICreateUplaod {
+/*interface ICreateUplaod {
     url: string;
     serviceId: string;
     serviceName: string;
     id: string;
-}
+}*/
 
-export const createUpload = async (upload: ICreateUplaod) => {
+export const createUpload = async (upload: any) => {
     return await prisma.upload.create({
-        data: upload as Prisma.UploadCreateInput,
+        data: upload,
     });
 };
 
-interface IUpdateUpload {
+/*interface IUpdateUpload {
     url?: string;
     serviceId?: string;
     serviceName?: string;
     id: string;
-}
+}*/
 
-export const updateUpload = async (upload: IUpdateUpload) => {
+export const updateUpload = async (upload: any) => {
     return await prisma.upload.update({
         where: { id: upload.id },
-        data: upload as Prisma.UploadCreateInput,
+        data: upload,
     });
 };
 
