@@ -5,9 +5,12 @@
   "main": "build/server.js",
   "scripts": {
     "test": "jest",
+    "prisma-client": "cd src/prisma && prisma generate",
     "build": "tsc -p tsconfig.json",
+    "build-prod" : "npm-run-all prisma-client build --sequential",
     "start": "node build/server.js",
-    "start-dev": "tsc -w & nodemon build/server.js"
+    "dev": "tsc -w & nodemon build/server.js",
+    "start-dev": "npm-run-all prisma-client dev --sequential"
   },
   "author": "olujuwon Alabi",
   "license": "ISC",
